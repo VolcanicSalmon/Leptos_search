@@ -30,8 +30,8 @@ rule metabat:
     '''
     jgi_summarize_bam_contig_depths --outputDepth {params.eukdep} --minContigLength 1000 --minContigDepth 1 {input.eukbam} --percentIdentity 50 
     jgi_summarize_bam_contig_depths --outputDepth {params.prokdep} --minContigLength 1000 --minContigDepth 1 {input.prokbam} --percentIdentity 50
-    metabat2 -i --abdFile {params.eukdep} --outFile {output.eukbin} --numThreads 8 --minContig 1000 &> {output.euklog}
-    metabat2 -i --abdFile {params.prokdep} --outFile {output.prokbin} --numThreads 8 --minContig 1000 &> {output.proklog}
+    metabat2 -i {input.eukfa} --abdFile {params.eukdep} --outFile {output.eukbin} --numThreads 8 --minContig 1000 &> {output.euklog}
+    metabat2 -i {input.prokfa} --abdFile {params.prokdep} --outFile {output.prokbin} --numThreads 8 --minContig 1000 &> {output.proklog}
     '''
 rule checkm:
   input:
