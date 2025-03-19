@@ -1,47 +1,29 @@
-import os
-import glob
-eukbam=glob.glob("*_euk_bin")
-megadir = [os.path.basename(f).replace("euk_bin", "megahit") for f in eukbam]
-samps=[os.path.basename(f).replace("_euk_bin","") for f in eukbam]
 rule all:
   input:
     expand("{samp}_gtdb/gtdbtk.bac120.summary.tsv",samp=samps),
     expand("{samp}_gtdb/gtdbtk.ar122.summary.tsv",samp=samps),
-    expand("{samp}_euk_pred/{samp}.faa",samp=samps),
-    expand("{samp}_euk_pred/{samp}.fna",samp=samps),
-    expand("{samp}_euk_pred/{samp}_scores.tsv",samp=samps)
-rule drep:
-  input:
-    bacbins=directory("{samp}_bac.bin"),
-    eukbins=directory("{samp}_euk_bin")
-  output:
-    bacdrep=directory("{samp}_bac_drep"),
-    eukdrep=directory("{samp}_euk_drep")
-  shell:
-    '''
-    dRep dereplicate {output.bacdrep} -g {input.bacbins}/*.fa
-    dRep dereplicate {output.eukdrep} -g {input.eukbins}/*.fa
-    '''
+    expand("{samp}_euk_pred/{fname}.faa",samp=samps,fname=fnames),
+    expand("{samp}_euk_pred/{fname}.fna",samp=samps,fname=fnames),
+    expand("{samp}_euk_pred/{fname}_scores.tsv",samp=samps,fname=fnames)
 rule bactax:
   input:
-    bacdrep="{samp}_bac_drep"
+    bacdrep="{samp}_bac.bin"
   output:
     directory("{samp}_gtdb"),
     gtbac="{samp}_gtdb/gtdbtk.bac120.summary.tsv",
     gtarc="{samp}_gtdb/gtdbtk.ar122.summary.tsv"
   shell:
     '''
-    mkdir -p {output}
     export GTDBTK_DATA_PATH=/mnt/apps/users/kli/conda/envs/whokaryote/share/gtdbtk-2.1.1/db/release220/ 
     gtdbtk classify_wf --genome_dir {input.bacdrep} --out_dir {output[0]} --cpus 8 --extension .fa
     '''
 rule eucpredict:
   input:
-    eukdrep="{samp}_euk_drep"
+    eukdrep="{samp}_euk_bin/{fname}.fa"
   output:
-    eukpep="{samp}_euk_pred/{samp}.faa",
-    euknuc="{samp}_euk_pred/{samp}.fna",
-    eukscore="{samp}_euk_pred/{samp}_scores.tsv"
+    eukpep="{samp}_euk_pred/{fname}.faa",
+    euknuc="{samp}_euk_pred/{fname}.fna",
+    eukscore="{samp}_euk_pred/{fname}_scores.tsv"
   params:
     odir="{samp}_euk_pred",
     tmpdir="pred_tmp",
@@ -51,6 +33,5 @@ rule eucpredict:
   shell:
     '''
     mkdir -p {params.tmpdir} {params.odir}
-    metaeuk easy-predict --threads {resources.cpus} --split-memory-limit 60G {input.eukdrep}/*fa {params.uniref} {params.odir}/ {params.tmpdir}
+    metaeuk easy-predict --threads {resources.cpus} --split-memory-limit 30G {input.eukdrep} {params.uniref} {params.odir} {params.tmpdir}
     '''
-
