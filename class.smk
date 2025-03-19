@@ -1,3 +1,9 @@
+import os
+import glob
+eukbam=glob.glob("*_euk_bin")
+megadir = [os.path.basename(f).replace("euk_bin", "megahit") for f in eukbam]
+samps=[os.path.basename(f).replace("_euk_bin","") for f in eukbam]
+fnames=[os.path.basename(f).replace(".fa", "") for f in glob.glob("samp1_euk_bin/*.fa")]
 rule all:
   input:
     expand("{samp}_gtdb/gtdbtk.bac120.summary.tsv",samp=samps),
@@ -15,7 +21,8 @@ rule bactax:
   shell:
     '''
     export GTDBTK_DATA_PATH=/mnt/apps/users/kli/conda/envs/whokaryote/share/gtdbtk-2.1.1/db/release220/ 
-    gtdbtk classify_wf --genome_dir {input.bacdrep} --out_dir {output[0]} --cpus 8 --extension .fa
+    [ -d {output[0]} ] || mkdir -p {output[0]}
+    gtdbtk classify_wf --genome_dir {input.bacdrep} --out_dir {output[0]} --cpus 8 --extension .fa --skip_ani_screen
     '''
 rule eucpredict:
   input:
@@ -33,5 +40,6 @@ rule eucpredict:
   shell:
     '''
     mkdir -p {params.tmpdir} {params.odir}
-    metaeuk easy-predict --threads {resources.cpus} --split-memory-limit 30G {input.eukdrep} {params.uniref} {params.odir} {params.tmpdir}
+    /mnt/shared/projects/rbgk/users_area/kli/metaeuk/bin/metaeuk easy-predict --threads {resources.cpus} --split-memory-limit 30G {input.eukdrep} {params.uniref} {params.odir} {params.tmpdir}
     '''
+
